@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Board</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #5cb85c;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #4cae4c;
+        }
+
+        .job {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .delete-button {
+            background-color: #d9534f;
+        }
+
+        .delete-button:hover {
+            background-color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Job Board</h1>
+        <h2>Available Jobs</h2>
+        <div id="job-listings"></div>
+        <h2>Post a Job</h2>
+        <form id="job-form">
+            <input type="text" id="title" placeholder="Job Title" required>
+            <input type="text" id="company" placeholder="Company" required>
+            <input type="text" id="location" placeholder="Location" required>
+            <textarea id="description" placeholder="Job Description" required></textarea>
+            <button type="submit">Post Job</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById('job-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const jobData = {
+                title: document.getElementById('title').value,
+                company: document.getElementById('company').value,
+                location: document.getElementById('location').value,
+                description: document.getElementById('description').value
+            };
+
+            const response = await fetch('/api/jobs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(jobData)
+            });
+
+            if (response.ok) {
+                document.getElementById('job-form').reset();
+                fetchJobs(); // Refresh job listings
+            } else {
+                alert('Error posting job');
+            }
+        });
+
+        async function fetchJobs() {
+            const response = await fetch('/api/jobs');
+            const jobs = await response.json();
+            const jobListings = document.getElementById('job-listings');
+            jobListings.innerHTML = ''; // Clear current listings
+
+            jobs.forEach(job => {
+                const jobDiv = document.createElement('div');
+                jobDiv.classList.add('job');
+                jobDiv.innerHTML = `<h3>${job.title} at ${job.company}</h3>
+                                    <p><strong>Location:</strong> ${job.location}</p>
+                                    <p>${job.description}</p>
+                                    <p><em>Posted on: ${new Date(job.postedAt).toLocaleDateString()}</em></p>
+                                    <button class="delete-button" onclick="deleteJob('${job._id}')">Delete Job</button>`;
+                jobListings.appendChild(jobDiv);
+            });
+        }
+
+        async function deleteJob(jobId) {
+            const response = await fetch(`/api/jobs/${jobId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                fetchJobs(); // Refresh job listings
+            } else {
+                alert('Error deleting job');
+            }
+        }
+
+        // Load jobs when the page loads
+        window.onload = fetchJobs;
+    </script>
+</body>
+</html>
